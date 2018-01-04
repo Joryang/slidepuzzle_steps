@@ -20,8 +20,8 @@ BUTTONCOLOR = WHITE
 BUTTONTEXTCOLOR = BLACK
 MESSAGECOLOR = WHITE
 
-BOARDWIDTH = 2
-BOARDHEIGHT = 2
+BOARDWIDTH = 3
+BOARDHEIGHT = 3
 TILESIZE = 80
 
 XMARGIN = int((WINDOWWIDTH - (TILESIZE * BOARDWIDTH + (BOARDWIDTH - 1))) / 2)
@@ -123,6 +123,51 @@ def makeMove(board, move):
         board[blankx][blanky], board[blankx - 1][blanky] = \
             board[blankx - 1][blanky], board[blankx][blanky]
 
+def getStartingBoard():
+    # Return a board data structure with tiles in the solved state.
+    # For example, if BOARDWIDTH and BOARDHEIGHT are both 3, this function
+    # returns [[1, 4, 7], [2, 5, 8], [3, 6, None]]
+    counter = 1
+    board = []
+    for x in range(BOARDWIDTH):
+        column = []
+        for y in range(BOARDHEIGHT):
+            column.append(counter)
+            counter += BOARDWIDTH
+        board.append(column)
+        counter -= BOARDWIDTH * (BOARDHEIGHT - 1) + BOARDWIDTH - 1
+    board[BOARDWIDTH-1][BOARDHEIGHT-1] = None
+    return board
+
+def getRandomMove(board, lastMove=None):
+    validMoves = [UP, DOWN, LEFT, RIGHT]
+    if lastMove == UP or not isValidMove(board, DOWN):
+        validMoves.remove(DOWN)
+    if lastMove == DOWN or not isValidMove(board, UP):
+        validMoves.remove(UP)
+    if lastMove == LEFT or not isValidMove(board, RIGHT):
+        validMoves.remove(RIGHT)
+    if lastMove == RIGHT or not isValidMove(board, LEFT):
+        validMoves.remove(LEFT)
+    return random.choice(validMoves)
+
+def generateNewPuzzle(numSlides):
+    # From a starting configuration, make numSlides number of moves ( and
+    # animate these moves).
+
+    board = getStartingBoard()
+    drawBoard(board, '')
+    pygame.display.update()
+    pygame.time.wait(500)
+    lastMove = None
+    for i in range(numSlides):
+        move = getRandomMove(board, lastMove)
+        makeMove(board, move)
+        lastMove = move
+    return board
+
+
+
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
 
@@ -132,8 +177,8 @@ def main():
     pygame.display.set_caption('Slide Puzzle')
     BASICFONT = pygame.font.Font('freesansbold.ttf', BASICFONTSIZE)
 
-    board = [[3,2], [1, None]]
-    solvedboard = [[1,3], [2, None]]
+    board = generateNewPuzzle(30)
+    solvedboard = getStartingBoard()
 
     while True:
         slideTo = None
