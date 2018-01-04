@@ -27,6 +27,11 @@ TILESIZE = 80
 XMARGIN = int((WINDOWWIDTH - (TILESIZE * BOARDWIDTH + (BOARDWIDTH - 1))) / 2)
 YMARGIN = int((WINDOWHEIGHT - (TILESIZE * BOARDHEIGHT + (BOARDHEIGHT - 1))) / 2)
 
+LEFT = 'left'
+RIGHT = 'right'
+UP = 'up'
+DOWN = 'down'
+
 
 def checkForQuit():
     for event in pygame.event.get(QUIT):
@@ -68,6 +73,44 @@ def drawBoard(board):
     pygame.draw.rect(DISPLAYSURF, BOARDCOLOR, \
                      (left-5, top-5, width+11, height+11), 4)
 
+def getSpotClicked(board, x, y):
+    for tileX in range(len(board)):
+        for tileY in range(len(board[0])):
+            left, top = getLeftTopOfTile(tileX, tileY)
+            tileRect = pygame.Rect(left, top, TILESIZE, TILESIZE)
+            if tileRect.collidepoint(x, y):
+                return (tileX, tileY)
+    return (None, None)
+
+def getBlankPosition(board):
+    for x in range(BOARDWIDTH):
+        for y in range(BOARDHEIGHT):
+            if board[x][y] == None:
+                return (x, y)
+
+def isValidMove(board, move):
+    blankx , blanky = getBlankPosition(board)
+    return (move == UP and blanky != len(board[0]) - 1) or \
+           (move == DOWN and blanky != 0) or \
+           (move == LEFT and blankx != len(board) -1) or \
+           (move == RIGHT and blankx != 0)
+
+def makeMove(board, move):
+
+    blankx, blanky = getBlankPosition(board)
+
+    if move == UP:
+        board[blankx][blanky], board[blankx][blanky + 1] =  \
+            board[blankx][blanky + 1], board[blankx][blanky]
+    elif move == DOWN:
+        board[blankx][blanky], board[blankx][blanky - 1] = \
+            board[blankx][blanky - 1], board[blankx][blanky]
+    elif move == LEFT:
+        board[blankx][blanky], board[blankx + 1][blanky] = \
+            board[blankx + 1][blanky], board[blankx][blanky]
+    elif move == RIGHT:
+        board[blankx][blanky], board[blankx - 1][blanky] = \
+            board[blankx - 1][blanky], board[blankx][blanky]
 
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
@@ -81,8 +124,34 @@ def main():
     board = [[3,2], [1, None]]
 
     while True:
+        slideTo = None
         checkForQuit()
         drawBoard(board)
+
+        for event in pygame.event.get():
+            if event.type == MOUSEBUTTONUP:
+                spotx, spoty = getSpotClicked(board, event.pos[0], event.pos[1])
+                blankx, blanky = getBlankPosition(board)
+                if spotx == blankx + 1 and spoty == blanky:
+                    slideTo = LEFT
+                elif spotx == blankx - 1 and spoty == blanky:
+                    slideTo = RIGHT
+                elif spotx == blankx and spoty == blanky + 1:
+                    slideTo = UP
+                elif spotx == blankx and spoty == blanky - 1:
+                    slideTo = DOWN
+            elif event.type == KEYUP:
+                if event.key in (K_LEFT, K_a) and isValidMove(board, LEFT):
+                    slideTo = LEFT
+                elif event.key in (K_RIGHT, K_d) and isValidMove(board, RIGHT):
+                    slideTo = RIGHT
+                elif event.key in (K_UP, K_w) and isValidMove(board, UP):
+                    slideTo = UP
+                elif event.key in (K_DOWN, K_s) and isValidMove(board, DOWN):
+                    slideTo = DOWN
+
+        if slideTo:
+            makeMove(board, slideTo)
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
