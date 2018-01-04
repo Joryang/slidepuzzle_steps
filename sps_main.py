@@ -60,8 +60,19 @@ def getLeftTopOfTile(tileX, tileY):
     top = YMARGIN + (tileY * TILESIZE) + (tileY -1)
     return (left, top)
 
-def drawBoard(board):
+def makeText(text, color, bgcolor, top, left):
+    # create the Surface and Rect objects for some text.
+    textSurf = BASICFONT.render(text, True, color, bgcolor)
+    textRect = textSurf.get_rect()
+    textRect.topleft = (top, left)
+    return (textSurf, textRect)
+
+
+def drawBoard(board, msg):
     DISPLAYSURF.fill(BGCOLOR)
+    if msg:
+        textSurf, textRect = makeText(msg, MESSAGECOLOR, BGCOLOR, 5, 5)
+        DISPLAYSURF.blit(textSurf, textRect)
     for tilex in range(len(board)):
         for tiley in range(len(board[0])):
             if board[tilex][tiley]:
@@ -122,11 +133,16 @@ def main():
     BASICFONT = pygame.font.Font('freesansbold.ttf', BASICFONTSIZE)
 
     board = [[3,2], [1, None]]
+    solvedboard = [[1,3], [2, None]]
 
     while True:
         slideTo = None
+        msg = ''
+        if board == solvedboard:
+            msg = 'Solved'
+
+        drawBoard(board, msg)
         checkForQuit()
-        drawBoard(board)
 
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONUP:
