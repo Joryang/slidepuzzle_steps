@@ -83,6 +83,7 @@ def drawBoard(board, msg):
     height = BOARDHEIGHT * TILESIZE
     pygame.draw.rect(DISPLAYSURF, BOARDCOLOR, \
                      (left-5, top-5, width+11, height+11), 4)
+    DISPLAYSURF.blit(NEW_SURF, NEW_RECT)
 
 def getSpotClicked(board, x, y):
     for tileX in range(len(board)):
@@ -169,13 +170,16 @@ def generateNewPuzzle(numSlides):
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, BASICFONT
+    global FPSCLOCK, DISPLAYSURF, BASICFONT, NEW_SURF, NEW_RECT
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     pygame.display.set_caption('Slide Puzzle')
     BASICFONT = pygame.font.Font('freesansbold.ttf', BASICFONTSIZE)
+
+    NEW_SURF, NEW_RECT = makeText('New Game', TEXTCOLOR, TILECOLOR, \
+                                  WINDOWWIDTH - 120, WINDOWHEIGHT - 60)
 
     board = generateNewPuzzle(30)
     solvedboard = getStartingBoard()
@@ -192,15 +196,19 @@ def main():
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONUP:
                 spotx, spoty = getSpotClicked(board, event.pos[0], event.pos[1])
-                blankx, blanky = getBlankPosition(board)
-                if spotx == blankx + 1 and spoty == blanky:
-                    slideTo = LEFT
-                elif spotx == blankx - 1 and spoty == blanky:
-                    slideTo = RIGHT
-                elif spotx == blankx and spoty == blanky + 1:
-                    slideTo = UP
-                elif spotx == blankx and spoty == blanky - 1:
-                    slideTo = DOWN
+                if (spotx, spoty) == (None, None):
+                    if NEW_RECT.collidepoint(event.pos):
+                        board = generateNewPuzzle(30)
+                else:
+                    blankx, blanky = getBlankPosition(board)
+                    if spotx == blankx + 1 and spoty == blanky:
+                        slideTo = LEFT
+                    elif spotx == blankx - 1 and spoty == blanky:
+                        slideTo = RIGHT
+                    elif spotx == blankx and spoty == blanky + 1:
+                        slideTo = UP
+                    elif spotx == blankx and spoty == blanky - 1:
+                        slideTo = DOWN
             elif event.type == KEYUP:
                 if event.key in (K_LEFT, K_a) and isValidMove(board, LEFT):
                     slideTo = LEFT
