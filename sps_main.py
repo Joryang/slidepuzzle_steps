@@ -124,6 +124,7 @@ def drawBoard(board, msg):
     pygame.draw.rect(DISPLAYSURF, BOARDCOLOR, \
                      (left-5, top-5, width+11, height+11), 4)
     DISPLAYSURF.blit(NEW_SURF, NEW_RECT)
+    DISPLAYSURF.blit(RESET_SURF, RESET_RECT)
 
 def getSpotClicked(board, x, y):
     for tileX in range(len(board)):
@@ -208,10 +209,24 @@ def generateNewPuzzle(numSlides):
         lastMove = move
     return board
 
+def resetAnimation(board, allMoves):
+    revAllMoves = allMoves[:]
+    revAllMoves.reverse()
+    for move in revAllMoves:
+        if move == UP:
+            oppositeMove = DOWN
+        elif move == DOWN:
+            oppositeMove = UP
+        elif move == RIGHT:
+            oppositeMove = LEFT
+        elif move == LEFT:
+            oppositeMove = RIGHT
+        slideAnimation(board, oppositeMove, '', int(TILESIZE/2))
+        makeMove(board, oppositeMove)
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, BASICFONT, NEW_SURF, NEW_RECT
+    global FPSCLOCK, DISPLAYSURF, BASICFONT, NEW_SURF, NEW_RECT, RESET_SURF, RESET_RECT
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
@@ -221,9 +236,13 @@ def main():
 
     NEW_SURF, NEW_RECT = makeText('New Game', TEXTCOLOR, TILECOLOR, \
                                   WINDOWWIDTH - 120, WINDOWHEIGHT - 60)
+    RESET_SURF, RESET_RECT = makeText('Reset', TEXTCOLOR, TILECOLOR, \
+                                  WINDOWWIDTH - 120, WINDOWHEIGHT - 90)
 
     board = generateNewPuzzle(30)
     solvedboard = getStartingBoard()
+
+    allMoves = []
 
     while True:
         slideTo = None
@@ -240,6 +259,10 @@ def main():
                 if (spotx, spoty) == (None, None):
                     if NEW_RECT.collidepoint(event.pos):
                         board = generateNewPuzzle(30)
+                        allMoves = []
+                    elif RESET_RECT.collidepoint(event.pos):
+                        resetAnimation(board, allMoves)
+                        allMoves = []
                 else:
                     blankx, blanky = getBlankPosition(board)
                     if spotx == blankx + 1 and spoty == blanky:
@@ -263,6 +286,7 @@ def main():
         if slideTo:
             slideAnimation(board, slideTo, 'Slide...', 20)
             makeMove(board, slideTo)
+            allMoves.append(slideTo)
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
