@@ -125,6 +125,7 @@ def drawBoard(board, msg):
                      (left-5, top-5, width+11, height+11), 4)
     DISPLAYSURF.blit(NEW_SURF, NEW_RECT)
     DISPLAYSURF.blit(RESET_SURF, RESET_RECT)
+    DISPLAYSURF.blit(SOLVE_SURF, SOLVE_RECT)
 
 def getSpotClicked(board, x, y):
     for tileX in range(len(board)):
@@ -196,7 +197,7 @@ def getRandomMove(board, lastMove=None):
 def generateNewPuzzle(numSlides):
     # From a starting configuration, make numSlides number of moves ( and
     # animate these moves).
-
+    sequence = []
     board = getStartingBoard()
     drawBoard(board, '')
     pygame.display.update()
@@ -206,8 +207,9 @@ def generateNewPuzzle(numSlides):
         move = getRandomMove(board, lastMove)
         slideAnimation(board, move, 'Game Start', 30)
         makeMove(board, move)
+        sequence.append(move)
         lastMove = move
-    return board
+    return (board, sequence)
 
 def resetAnimation(board, allMoves):
     revAllMoves = allMoves[:]
@@ -226,7 +228,8 @@ def resetAnimation(board, allMoves):
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, BASICFONT, NEW_SURF, NEW_RECT, RESET_SURF, RESET_RECT
+    global FPSCLOCK, DISPLAYSURF, BASICFONT, NEW_SURF, NEW_RECT, RESET_SURF, RESET_RECT, \
+        SOLVE_SURF, SOLVE_RECT
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
@@ -238,8 +241,11 @@ def main():
                                   WINDOWWIDTH - 120, WINDOWHEIGHT - 60)
     RESET_SURF, RESET_RECT = makeText('Reset', TEXTCOLOR, TILECOLOR, \
                                   WINDOWWIDTH - 120, WINDOWHEIGHT - 90)
+    SOLVE_SURF, SOLVE_RECT = makeText('Solve', TEXTCOLOR, TILECOLOR,
+                                  WINDOWWIDTH - 120, WINDOWHEIGHT - 30)
 
-    board = generateNewPuzzle(30)
+
+    board, solutionSeq = generateNewPuzzle(30)
     solvedboard = getStartingBoard()
 
     allMoves = []
@@ -258,10 +264,13 @@ def main():
                 spotx, spoty = getSpotClicked(board, event.pos[0], event.pos[1])
                 if (spotx, spoty) == (None, None):
                     if NEW_RECT.collidepoint(event.pos):
-                        board = generateNewPuzzle(30)
+                        board, solutionSeq = generateNewPuzzle(30)
                         allMoves = []
                     elif RESET_RECT.collidepoint(event.pos):
                         resetAnimation(board, allMoves)
+                        allMoves = []
+                    elif SOLVE_RECT.collidepoint(event.pos):
+                        resetAnimation(board, solutionSeq + allMoves)
                         allMoves = []
                 else:
                     blankx, blanky = getBlankPosition(board)
