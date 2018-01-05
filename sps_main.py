@@ -1,3 +1,4 @@
+# coding: utf-8
 import pygame, sys, random
 from pygame.locals import *
 
@@ -47,13 +48,52 @@ def terminate():
     sys.exit()
 
 
-def drawTile(tilex, tiley, number):
+def drawTile(tilex, tiley, number, adjx=0, adjy=0):
     left, top = getLeftTopOfTile(tilex, tiley)
-    pygame.draw.rect(DISPLAYSURF, TILECOLOR, (left, top, TILESIZE, TILESIZE))
+    pygame.draw.rect(DISPLAYSURF, TILECOLOR, (left+adjx, top+adjy, TILESIZE, TILESIZE))
     textSurf = BASICFONT.render(str(number), True, TEXTCOLOR)
     textRect = textSurf.get_rect()
-    textRect.center = left + int(TILESIZE/2) , top + int(TILESIZE/2)
+    textRect.center = left + int(TILESIZE/2) + adjx, top + int(TILESIZE/2) + adjy
     DISPLAYSURF.blit(textSurf, textRect)
+
+def slideAnimation(board, direction, message, animationSpeed):
+    # Note: This function does not check if the move is valid.
+    blankx, blanky = getBlankPosition(board)
+    if direction == UP:
+        movex = blankx
+        movey = blanky + 1
+    elif direction == DOWN:
+        movex = blankx
+        movey = blanky - 1
+    elif direction == LEFT:
+        movex = blankx + 1
+        movey = blanky
+    elif direction == RIGHT:
+        movex = blankx - 1
+        movey = blanky
+
+    drawBoard(board, message)
+    baseSurf = DISPLAYSURF.copy() # 复制displaysurf
+
+    moveLeft, moveTop = getLeftTopOfTile(movex, movey) # 获取要移动的方块的坐标
+    pygame.draw.rect(baseSurf, BGCOLOR, (moveLeft, moveTop, TILESIZE, TILESIZE))
+    # 遮挡当前方块, 以便下一步绘制动画
+
+    for i in range(0, TILESIZE, animationSpeed):
+        checkForQuit() # 注意监测退出事件
+        DISPLAYSURF.blit(baseSurf, (0, 0)) # 布置图层
+        # 开始绘制
+        if direction == UP:
+            drawTile(movex, movey, board[movex][movey], 0, -i)
+        if direction == DOWN:
+            drawTile(movex, movey, board[movex][movey], 0, i)
+        if direction == LEFT:
+            drawTile(movex, movey, board[movex][movey], -i, 0)
+        if direction == RIGHT:
+            drawTile(movex, movey, board[movex][movey], i, 0)
+        pygame.display.update()
+        FPSCLOCK.tick(FPS)
+
 
 def getLeftTopOfTile(tileX, tileY):
     left = XMARGIN + (tileX * TILESIZE) + (tileX -1)
@@ -163,6 +203,7 @@ def generateNewPuzzle(numSlides):
     lastMove = None
     for i in range(numSlides):
         move = getRandomMove(board, lastMove)
+        slideAnimation(board, move, 'Game Start', 30)
         makeMove(board, move)
         lastMove = move
     return board
@@ -220,6 +261,7 @@ def main():
                     slideTo = DOWN
 
         if slideTo:
+            slideAnimation(board, slideTo, 'Slide...', 20)
             makeMove(board, slideTo)
 
         pygame.display.update()
